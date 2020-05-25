@@ -1,0 +1,6 @@
+<resources>
+    <!-- ログ画面 -->
+    <integer name="logging_maxlines">500</integer>
+    <integer name="logging_check_millis">500</integer>
+    <integer name="logging_interval_millis">1000</integer>
+</resources>

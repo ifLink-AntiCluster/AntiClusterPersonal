@@ -1,0 +1,108 @@
+<resources>
+	<string name="app_name">Anti Cluster</string>
+	<string name="navigation_drawer_open">Open navigation drawer</string>
+	<string name="navigation_drawer_close">Close navigation drawer</string>
+	<string name="nav_header_title">ifLink Anti Cluster</string>
+	<string name="nav_header_subtitle">ifLink Open Community</string>
+	<string name="nav_header_desc">Navigation header</string>
+	<string name="action_settings">Settings</string>
+	<!-- メニュー -->
+	<string name="menu_home">Anti Cluster</string>
+	<string name="menu_setting">設定</string>
+	<string name="menu_logging">ログ確認</string>
+	<!-- レベル説明 -->
+	<string name="level_0_description">\n\n判定期間のデータがないため判定できません</string>
+	<string name="level_1_description">必要最小限の人との接触し\nか行っていません。安全な\nレベルです。外から帰って\nきた人に消毒や手洗いを促\nすなど、引き続き注意して\n行動してください。</string>
+	<string name="level_2_description">他人との濃厚接触を避けて\n注意深く行動しています。\n引き続き、他人との距離を\n保持する、密閉空間に同席\nしない等の注意を継続して\n行動してください。</string>
+	<string name="level_3_description">一定の接触はありますが注\n意深く行動しています。マ\nスク着用、消毒、手洗いう\nがい等を励行し、リスクを\n軽減するよう努力してくだ\nさい。</string>
+	<string name="level_4_description">多くの他人との近接と一定\n数の濃厚接触があります。\nマスク着用、消毒、手洗い\nうがい等を励行し、リスク\nを軽減するよう努力してく\nださい。</string>
+	<string name="level_5_description">多くの濃厚接触数が数えら\nれています。リスクの高い\n状態です。他人と近距離で\n長時間同席しない、人の多\nいところに出向かない等の\n配慮をお願いします。</string>
+    <!-- メイン画面 -->
+    <string name="day_format">M/d(E)</string>
+	<string name="title_hour">過去４時間のリスク判定</string>
+    <string name="title_day">{0}のリスク判定</string>
+    <string name="title_period">{0}～{1}のリスク判定</string>
+    <string name="hours">４時間</string>
+    <string name="day">１日</string>
+    <string name="two_week">２週間</string>
+	<string name="realtime">現在値（10分間集計）</string>
+	<string name="duringmax">期間中最大値</string>
+	<string name="recordtime">前回集計時刻＝</string>
+	<string name="alert">濃厚接触</string>
+	<string name="alert_note">※指定した電波強度で一定時間受信したビーコン信号をカウントしています</string>
+	<string name="caution">至近距離</string>
+	<string name="distant">周囲</string>
+	<string name="data_load_fail">データの読み込みに失敗しました</string>
+	<string name="data_save_fail">データの保存に失敗しました</string>
+	<!-- 設定画面 -->
+	<string name="scan_interval">●BLE設定</string>
+	<string name="scan_low_power">Low power</string>
+	<string name="scan_balanced">Balanced</string>
+	<string name="scan_low_latency">Low latency</string>
+	<string name="scan_setting1">0.5秒スキャン→4.5秒待つを繰り返し</string>
+	<string name="scan_setting2">2秒スキャン→3秒待つを繰り返し</string>
+	<string name="scan_setting3">ずっとスキャンします</string>
+	<string name="alert_judge_line">●「濃厚接触」の推定基準</string>
+	<string name="rssi_value">電波強度</string>
+	<string name="default_rssi">-80</string>
+	<string name="setting_2m">dBm以上</string>
+	<string name="default_alert_timer">15</string>
+	<string name="alert_timer">分以上</string>
+	<string name="around_judge_line">●「周囲」の推定基準</string>
+	<string name="default_around_rssi">-100</string>
+	<string name="continuous_time">継続時間</string>
+	<string name="setting_10m">ｍ以内</string>
+	<string name="level_alert">p = 濃厚接触 x </string>
+	<string name="default_alert_counter_coefficient">10</string>
+	<string name="level_caution"> + 至近距離 x </string>
+	<string name="default_caution_counter_coefficient">1</string>
+	<string name="level_distant"> + 周囲 x </string>
+	<string name="default_distant_counter_coefficient">0.05</string>
+	<string name="level_judge_line">●レベル判定値</string>
+	<string name="level_judge_1">LEVEL1 : p ＜</string>
+	<string name="level_judge_2">LEVEL2 : p ＜</string>
+	<string name="level_judge_3">LEVEL3 : p ＜</string>
+	<string name="level_judge_4">LEVEL4 : p ＜</string>
+	<string name="level_judge_5">LEVEL5 : p ≧</string>
+	<string name="default_level_judge_1">10</string>
+	<string name="default_level_judge_2">50</string>
+	<string name="default_level_judge_3">100</string>
+	<string name="default_level_judge_4">500</string>
+	<string name="default_level_judge_5">500</string>
+	<string name="device_name_check">デバイス名のある信号を無視する</string>
+	<string name="default_device_name_check">1</string>
+	<string name="setting_uuid">UUID</string>
+	<string name="send_data">リスク判定を共有</string>
+	<string name="logging_on_off">アプリケーションのログを残す</string>
+	<string name="save">保存</string>
+	<string name="default_logging_setting">0</string>
+	<bool name="logging_ble_scan">true</bool>
+	<bool name="device_name_check">true</bool>
+	<string name="update_setting">カウント表示更新頻度</string>
+	<string name="default_update_time">5</string>
+	<string name="update_time">秒</string>
+	<string name="finish_save">保存しました</string>
+	<!-- データ送信設定値 -->
+	<string name="send_data_UUID">0000b81d-0000-1000-8000-00805f9b34fb</string>
+	<string name="send_data_timeout_millis">10000</string>
+	<string name="send_data_success">送信しました</string>
+	<string name="send_data_error">送信エラーが発生しました</string>
+	<string name="send_data_fail">送信に失敗しました</string>
+	<!-- ログ画面 -->
+	<string name="logging_start">開始</string>
+	<string name="logging_stop">停止</string>
+	<string name="logging_contents">ここにログが表示されます</string>
+	<string name="logging_keyword">キーワードを入力</string>
+	<string name="no_logging">ログがありません</string>
+	<bool name="auto_logging">false</bool>
+	<bool name="logging_task">false</bool>
+	<bool name="logging_file">false</bool>
+	<bool name="logging_screen">false</bool>
+	<string-array name="logging_levels">
+		<item>Verbose</item>
+		<item>Debug</item>
+		<item>Info</item>
+		<item>Warning</item>
+		<item>Error</item>
+	</string-array>
+</resources>
