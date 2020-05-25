@@ -189,11 +189,11 @@ The counted value is saved as a data file in a folder that can be accessed from 
 The payload of BLE advertising when send risk level value is as follows.
 
 Case 1: UUID of the first section is 1 to 2 bytes<br>
-Exaple: UUID=0000b81d-0000-1000-8000-00805f9b34fb, RiskLevel=2<br>
+Example: UUID=0000b81d-0000-1000-8000-00805f9b34fb, RiskLevel=2<br>
 > 0x03031db805161db80002
 
 Case 2: UUID of the first section is 3 to 4 bytes<br>
-Exaple: UUID=<ins>1000b81d</ins>-0000-1000-8000-00805f9b34fb, RiskLevel=3<br>
+Exapmle: UUID=<ins>1000b81d</ins>-0000-1000-8000-00805f9b34fb, RiskLevel=3<br>
 > 0x0505<ins>1db80100</ins>0720<ins>1db80100</ins>0003
 
 Format of case 1:<br>
