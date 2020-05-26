@@ -231,7 +231,7 @@ The following libraries are used in this app.
 Compatible with Android OS 8.0 or later.
 
 ## Sample Application
-It registers the sample application which built the source code.<br>
+Here is a sample applicaiotn apk which built from the source code.<br>
 [SampleApplication](https://github.com/ifLink-AntiCluster/AntiCluster/raw/master/SampleApplication/anticluster.apk)
 
 ## Community
