@@ -104,6 +104,10 @@ XXXXXXXX-0000-1000-8000-00805f9b34fb（XXXXXXXXは8桁の16進数）
 
 Android OS8.0以降に対応しています。
 
+## Sample Application
+ソースコードをビルドしたサンプルアプリケーションを登録しています。<br>
+[SampleApplication](./SampleApplication/anticluster.apk)
+
 ## Community
 リクエスト、質問、バグリポートがある場合、GitHubのissue機能を使用して下さい。
 
@@ -225,6 +229,10 @@ The following libraries are used in this app.
 - MPAndroid Chart
 
 Compatible with Android OS 8.0 or later.
+
+## Sample Application
+It registers the sample application which built the source code.<br>
+[SampleApplication](./SampleApplication/anticluster.apk)
 
 ## Community
 If you have a request, question, or bug report, please use the issue feature on GitHub.
