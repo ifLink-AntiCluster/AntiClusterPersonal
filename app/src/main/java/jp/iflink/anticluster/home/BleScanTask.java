@@ -132,7 +132,15 @@ public class BleScanTask  implements Runnable {
                 // 10分でScan Stop/Start
                 if(ScanRestartCount == SCAN_RESTART_TIMER){
                     Log.d(TAG, "Scan Stop/Start");
+                    // BLEスキャン一時停止
                     stopScan();
+                    // BLEスキャンリトライの精度向上の為、一時停止⇒再開までの間に1秒空ける
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                    }
+                    // BLEスキャン再開
                     startScan();
                     ScanRestartCount = 0;
                 }
@@ -281,6 +289,8 @@ public class BleScanTask  implements Runnable {
 
         if (this.mBtAdapter != null) {
             Log.d(TAG, "startScan()");
+            mScanFilters.clear();
+            mScanFilters.add(new ScanFilter.Builder().build());
             this.mBTLeScanner.startScan(mScanFilters, scSettings, mScanCallback);
         }
     }
