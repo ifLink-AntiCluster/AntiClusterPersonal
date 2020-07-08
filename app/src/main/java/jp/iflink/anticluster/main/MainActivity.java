@@ -27,11 +27,14 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import jp.iflink.anticluster.BuildConfig;
 import jp.iflink.anticluster.R;
 import jp.iflink.anticluster.home.BleScanTask;
 import jp.iflink.anticluster.logging.LoggingTask;
 
 import android.content.pm.PackageManager;
+import android.view.View;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
@@ -66,6 +69,10 @@ public class MainActivity extends AppCompatActivity {
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
+        // set version name
+        View navHeaderView = navigationView.getHeaderView(0);
+        TextView mVersion = navHeaderView.findViewById(R.id.tv_version);
+        mVersion.setText(BuildConfig.VERSION_NAME);
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
