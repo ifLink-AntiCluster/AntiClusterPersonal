@@ -78,7 +78,8 @@ public class HomeFragment extends Fragment {
     private ImageView mLevel4_Image;
     private ImageView mLevel5_Image;
 
-    private Timer timer ;
+    // 画面更新用タイマー
+    private Timer screenUpdateTimer ;
     // データ集計用タイマー
     private Timer recordTimeTimer;
 
@@ -177,7 +178,7 @@ public class HomeFragment extends Fragment {
                     m2Week.setTextColor(R.color.colorText);
                     m2Week.setBackgroundColor(Color.WHITE);
                     // タイトル設定
-                    String dayText = new SimpleDateFormat(day_format, Locale.getDefault()).format(new Date());
+                    //String dayText = new SimpleDateFormat(day_format, Locale.getDefault()).format(new Date());
                     mPeriod.setText(title_hour);
                     // 4Hoursのグラフを更新
                     CounterDevice maxValueInfo = graphManager.updateGraph4Hours();
@@ -325,17 +326,14 @@ public class HomeFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Log.d(TAG, "HomeFragment onCreate");
 
-        timer = new Timer(true);
-        recordTimeTimer = new Timer(true);
+        // ハンドラの初期化
         mHandler = new Handler();
-
         // データストアの初期化
         dataStore = new DataStore(this.getContext());
         dataStore.init();
-
+        // フラグの初期化
         m1st_Flag = FALSE;
         m4HoursPushFlag = FALSE;
         mDayPushFlag = FALSE;
@@ -373,77 +371,80 @@ public class HomeFragment extends Fragment {
         mLevel5JudgeLine = Integer.parseInt(MainActivity.prefs.getString("judge_line5", resources.getString(R.string.default_level_judge_5)));
 
         // 画面更新用定期処理（5秒間隔）
-        timer.scheduleAtFixedRate(new TimerTask() {
+        if (screenUpdateTimer == null) {
+            screenUpdateTimer = new Timer(true);
+            screenUpdateTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // BLEスキャンタスク取得
+                            BleScanTask bleService = getBleScanTask();
+                            if (bleService == null) {
+                                Log.w(TAG, "bleService is null");
+                                return;
+                            }
 
-            @Override
-            public void run() {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        // BLEスキャンタスク取得
-                        BleScanTask bleService = getBleScanTask();
-                        if (bleService == null) {
-                            Log.w(TAG, "bleService is null");
-                            return;
+                            // 初期起動時の処理
+                            if (m1st_Flag == FALSE) {
+                                bleService.setThreshold_2m(mAlertDistance);
+                                bleService.setAlertTimer(mAlertTimer);
+                                bleService.setThreshold_10m(mAroundDistance);
+                                bleService.setLoggingSetting(mLoggingSetting);
+
+                                m1st_Flag = TRUE;
+                            }
+                            // 現在値の更新
+                            mRealTimeAlert.setText(String.valueOf(bleService.getAlertCounter()));
+                            mRealTimeCaution.setText(String.valueOf(bleService.getCautionCounter()));
+                            mRealTimeDistant.setText(String.valueOf(bleService.getDistantCounter()));
                         }
-
-                        // 初期起動時の処理
-                        if (m1st_Flag==FALSE){
-                            bleService.setThreshold_2m(mAlertDistance);
-                            bleService.setAlertTimer(mAlertTimer);
-                            bleService.setThreshold_10m(mAroundDistance);
-                            bleService.setLoggingSetting(mLoggingSetting);
-
-                            m1st_Flag=TRUE;
-                        }
-                        // 現在値の更新
-                        mRealTimeAlert.setText(String.valueOf(bleService.getAlertCounter()));
-                        mRealTimeCaution.setText(String.valueOf(bleService.getCautionCounter()));
-                        mRealTimeDistant.setText(String.valueOf(bleService.getDistantCounter()));
-                    }
-                });
-            }
-
-        }, 0, mUpdateTime*1000);
-
-        // 初期実行待ち時間（次の分の05秒）
-        int timerDelay = getDelayMillisToNextMinute() + 5000;
-
-        // 前回集計時刻、グラフ更新用定期処理（1分間隔）
-        recordTimeTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                // 10分毎に実施
-                if (isJustTimeMinuteOf(10)){
-                    return;
+                    });
                 }
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        // BLEスキャンタスク取得
-                        BleScanTask bleService = getBleScanTask();
-                        if (bleService == null) {
-                            Log.w(TAG, "bleService is null");
-                            return;
-                        }
-                        // 前回集計時刻を更新
-                        mRecordTime.setText(bleService.getmRecordTime());
-                        mRecordTimeBlock.setVisibility(View.VISIBLE);
-                        // グラフ更新
-                        mPrevRecordTime = graphManager.loadData(new Date());
-                        CounterDevice maxValueInfo = graphManager.updateGraph();
-                        if (maxValueInfo != null){
-                            // 期間中最大値を更新
-                            mDuringMaxAlert.setText(String.valueOf(maxValueInfo.mAlertCounter));
-                            mDuringMaxCaution.setText(String.valueOf(maxValueInfo.mCautionCounter));
-                            mDuringMaxDistant.setText(String.valueOf(maxValueInfo.mDistantCounter));
-                            // リスク判定の更新
-                            updateRiskLevel(maxValueInfo);
-                        }
+            }, 0, mUpdateTime * 1000);
+        }
+
+        if (recordTimeTimer == null) {
+            recordTimeTimer = new Timer(true);
+            // 初期実行待ち時間（次の分の05秒）
+            int timerDelay = getDelayMillisToNextMinute() + 5000;
+            // 前回集計時刻、グラフ更新用定期処理（1分間隔）
+            recordTimeTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    // 10分毎に実施
+                    if (!isJustTimeMinuteOf(10)) {
+                        return;
                     }
-                });
-            }
-        }, timerDelay, 1000*60);
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // BLEスキャンタスク取得
+                            BleScanTask bleService = getBleScanTask();
+                            if (bleService == null) {
+                                Log.w(TAG, "bleService is null");
+                                return;
+                            }
+                            // 前回集計時刻を更新
+                            mRecordTime.setText(bleService.getmRecordTime());
+                            mRecordTimeBlock.setVisibility(View.VISIBLE);
+                            // グラフ更新
+                            mPrevRecordTime = graphManager.loadData(new Date());
+                            CounterDevice maxValueInfo = graphManager.updateGraph();
+                            if (maxValueInfo != null) {
+                                // 期間中最大値を更新
+                                mDuringMaxAlert.setText(String.valueOf(maxValueInfo.mAlertCounter));
+                                mDuringMaxCaution.setText(String.valueOf(maxValueInfo.mCautionCounter));
+                                mDuringMaxDistant.setText(String.valueOf(maxValueInfo.mDistantCounter));
+                                // リスク判定の更新
+                                updateRiskLevel(maxValueInfo);
+                            }
+                        }
+                    });
+                }
+            }, timerDelay, 1000 * 60);
+        }
 
         // グラフマネージャの初期化
         graphManager.init(dataStore);
@@ -460,7 +461,7 @@ public class HomeFragment extends Fragment {
 
     private boolean isJustTimeMinuteOf(int minute){
         // 時刻を1分単位の精度にして指定したminute毎かどうかを判定
-        return (int)(new Date().getTime()/60000) % minute != 0;
+        return (int)(new Date().getTime()/60000) % minute == 0;
     }
 
     @Override
@@ -498,6 +499,12 @@ public class HomeFragment extends Fragment {
     public void onDestroy(){
         super.onDestroy();
         Log.d(TAG, "HomeFragment onDestroy");
+        if (screenUpdateTimer != null){
+            screenUpdateTimer.cancel();
+        }
+        if (recordTimeTimer != null){
+            recordTimeTimer.cancel();
+        }
     }
 
     private BleScanTask getBleScanTask(){
