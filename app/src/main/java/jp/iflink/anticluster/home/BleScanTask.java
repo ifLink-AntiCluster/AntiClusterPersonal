@@ -40,11 +40,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jp.iflink.anticluster.R;
 import jp.iflink.anticluster.main.MainActivity;
 
+import static jp.iflink.anticluster.setting.SettingFragment.UpdateMethod;
 import static jp.iflink.anticluster.main.MainActivity.prefs;
 
 
@@ -81,14 +88,22 @@ public class BleScanTask  implements Runnable {
     private List<ScanFilter> mScanFilters;
 
     private FileHandler fileHandler;
-    private Timer collectorTimer ;
+
+    private ScheduledFuture<?> routine1mFuture;
+    private ScheduledFuture<?> routine10mFuture;
+    private ScheduledExecutorService routineScheduler;
     private String mRecordTime;
+    private Date prevRecordTime;
     // データストア
     private DataStore dataStore;
+    // スキャン結果キュー
+    private BlockingQueue<ScanResult> scanResultQueue;
 
     // BLE scan off/onタイマ
     private int ScanRestartCount;
-    private static final int SCAN_RESTART_TIMER = 3;
+    private static final int SCAN_RESTART_TIMER = 10;
+    // Scan結果更新タイマ
+    private int ScanUpdateCount;
 
     // Advertise Flags
     private static final int BLE_CAPABLE_CONTROLLER = 0x08;
@@ -96,6 +111,9 @@ public class BleScanTask  implements Runnable {
     // BLE Company code
     private static final int COMPANY_CODE_APPLE = 0x004C;
     private static final int IPHONE_THRESHOLD = -80;
+    // update method and per minutes
+    private int mUpdateMethod;
+    private int mUpdatePerMinutes;
 
     @Override
     public void run(){
@@ -119,64 +137,111 @@ public class BleScanTask  implements Runnable {
             }
         }
 
-        // データ集計用定期処理（1分間隔）
-        int timerDelay = getDelayMillisToNextMinute();
-        collectorTimer.cancel();
-        collectorTimer = new Timer(true);
-
-        collectorTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                Log.d(TAG, "BLE Service timer");
-                final boolean justTime10m = isJustTimeMinuteOf(10);
-                // 10分でScan Stop/Start
-                if(ScanRestartCount == SCAN_RESTART_TIMER){
-                    Log.d(TAG, "Scan Stop/Start");
-                    // BLEスキャン一時停止
-                    stopScan();
-                    // BLEスキャンリトライの精度向上の為、一時停止⇒再開までの間に1秒空ける
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        Log.e(TAG, e.getMessage(), e);
+        if (routine1mFuture == null){
+            // データ更新用定期処理（1分間隔）
+            int timerDelay = getDelayMillisToNextMinute();
+            routine1mFuture = routineScheduler.scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "update timer");
+                    //final boolean justTime10m = isJustTimeMinuteOf(10);
+                    if (mUpdateMethod ==UpdateMethod.EVERY_TIME){
+                        ScanUpdateCount++;
+                        // スキャン結果の更新
+                        if(ScanUpdateCount == mUpdatePerMinutes){
+                            ScanResult result;
+                            while ((result = scanResultQueue.poll()) != null){
+                                try {
+                                    update(result);
+                                } catch (Exception e){
+                                    Log.e(TAG, e.getMessage(), e);
+                                }
+                            }
+                            ScanUpdateCount = 0;
+                        }
                     }
-                    // BLEスキャン再開
-                    startScan();
-                    ScanRestartCount = 0;
-                }
-                else{
+                    // 10分でScan Stop/Start
                     ScanRestartCount++;
+                    if(ScanRestartCount == SCAN_RESTART_TIMER){
+                        Log.d(TAG, "Scan Stop/Start");
+                        // BLEスキャン一時停止
+                        try {
+                            stopScan();
+                        } catch (Exception e){
+                            Log.e(TAG, e.getMessage(), e);
+                        }
+                        // BLEスキャンリトライの精度向上の為、一時停止⇒再開までの間に1秒空ける
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            Log.e(TAG, e.getMessage(), e);
+                        }
+                        // BLEスキャン再開
+                        try {
+                            startScan();
+                        } catch (Exception e){
+                            Log.e(TAG, e.getMessage(), e);
+                        }
+                        ScanRestartCount = 0;
+                    }
                 }
-                // 10分毎に実施
-                if (justTime10m){
-                    return;
-                }
-                // データ保存
-                Log.d(TAG, "record data");
-                CounterDevice data = new CounterDevice();
-                data.mAlertCounter = mAlertCounter.get();
-                data.mCautionCounter = mCautionCounter.get();
-                data.mDistantCounter = mDistantCounter.get();
-                try {
-                    // 集計を実施
-                    Date recordTime = new Date();
-                    dataStore.writeRecord(data, new Date());
-                    // 前回集計時刻を更新
-                    mRecordTime = getDateTimeText(recordTime);
-                } catch (IOException e) {
-                    Log.e(TAG, e.getMessage(), e);
-                    showMessage(applicationContext.getResources().getString(R.string.data_save_fail));
-                }
-                // データをクリア
-                scanDataClear();
-            }
-        }, timerDelay, 1000*60);
+            //}, timerDelay, 1000*60);
+            }, timerDelay, 1000*60, TimeUnit.MILLISECONDS);
+        }
 
+        if (routine10mFuture == null){
+            // データ集計用定期処理（30秒間隔でトリガーし、10分時で動作）
+            int timerDelay = getDelayMillisToNext10Minute();
+            routine10mFuture = routineScheduler.scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    Date nowTime = new Date();
+                    if (!isJustTimeMinuteOf(nowTime, 10)){
+                        // 10分時のみ処理を実行する
+                        return;
+                    }
+                    if (isSameRecordTime(nowTime, prevRecordTime, 10)){
+                        // 同一記録時間帯の場合は、処理実行しない
+                        return;
+                    }
+                    // データ保存
+                    Log.d(TAG, "record data");
+                    CounterDevice data = new CounterDevice();
+                    data.mAlertCounter = mAlertCounter.get();
+                    data.mCautionCounter = mCautionCounter.get();
+                    data.mDistantCounter = mDistantCounter.get();
+                    try {
+                        // 集計を実施
+                        Date recordTime = new Date();
+                        dataStore.writeRecord(data, recordTime);
+                        // 前回集計時刻を更新
+                        prevRecordTime = recordTime;
+                        mRecordTime = getDateTimeText(prevRecordTime);
+                    } catch (IOException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                        showMessage(applicationContext.getResources().getString(R.string.data_save_fail));
+                    }
+                    // データをクリア
+                    scanDataClear();
+                }
+                //}, timerDelay, 1000*60);
+            }, timerDelay, 1000*30, TimeUnit.MILLISECONDS);
+        }
     }
 
-    private boolean isJustTimeMinuteOf(int minute){
+    private boolean isJustTimeMinuteOf(Date date, int minute){
         // 時刻を1分単位の精度にして指定したminute毎かどうかを判定
-        return (int)(new Date().getTime()/60000) % minute != 0;
+        return (int)(date.getTime()/60000) % minute == 0;
+    }
+
+    private boolean isSameRecordTime(Date nowTime, Date prevTime, int minute){
+        if (nowTime== null || prevTime == null){
+            return false;
+        }
+        // 時刻を1分単位＊指定したminute毎の精度にして、同一記録時間帯かどうか判定
+        int nowTimeVal = (int)(nowTime.getTime()/(60000 * minute));
+        int prevTimeVal = (int)(prevTime.getTime()/(60000 * minute));
+        return nowTimeVal == prevTimeVal;
     }
 
     String getmRecordTime(){ return mRecordTime;}
@@ -221,7 +286,7 @@ public class BleScanTask  implements Runnable {
         // データストアの初期化
         this.dataStore = new DataStore(this.applicationContext);
         // タイマーの初期化
-        this.collectorTimer = new Timer(true);
+        this.routineScheduler = Executors.newScheduledThreadPool(2);
         // デバイス一覧の初期化
         this.mScanDeviceList = new ArrayList<>();
         // カウンターの初期化
@@ -230,24 +295,42 @@ public class BleScanTask  implements Runnable {
         this.mDistantCounter = new AtomicInteger(0);
         // スキャンモードの取得
         int scan_setting = Integer.parseInt(prefs.getString("scan_setting",String.valueOf(0)));
+        // カウント更新方法の取得
+        Resources resources = applicationContext.getResources();
+        mUpdateMethod = MainActivity.prefs.getInt("update_method", UpdateMethod.SEQUENTIAL);
+        mUpdatePerMinutes = MainActivity.prefs.getInt("update_per_minutes", resources.getInteger(R.integer.default_update_per_minutes));
 
         ScanSettings.Builder scanSettings = new ScanSettings.Builder();
         scanSettings.setScanMode(scan_setting).build();
         this.scSettings = scanSettings.build();
         this.mScanFilters = new ArrayList<>();
+        this.scanResultQueue  = new LinkedBlockingQueue<>();
 
         this.mScanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, final ScanResult result) {
-                Log.d(TAG, result.toString());
-                // listに追加
-                update(result.getDevice(), result.getRssi(), result);
+                //Log.d(TAG, result.toString());
+                if (checkScanResult(result)){
+                    // スキャン対象の場合
+                    if (mUpdateMethod == UpdateMethod.SEQUENTIAL){
+                        // 逐次カウント更新の場合、即時実行
+                        try {
+                            update(result);
+                        } catch (Exception e){
+                            Log.e(TAG, e.getMessage(), e);
+                        }
+                    } else if (mUpdateMethod == UpdateMethod.EVERY_TIME){
+                        // 毎回指定分毎カウント更新の場合、キューに追加
+                        scanResultQueue.add(result);
+                    }
+                }
             }
         };
 
         this.fileHandler = new FileHandler(this.applicationContext);
 
         this.ScanRestartCount = 0;
+        this.ScanUpdateCount = 0;
 
         // スキャン初期化完了を配信
         Intent intent = new Intent(ACTION_SCAN);
@@ -259,8 +342,8 @@ public class BleScanTask  implements Runnable {
         // スキャンを停止
         stopScan();
         // タイマーを停止
-        if (collectorTimer != null){
-            collectorTimer.cancel();
+        if (routineScheduler != null){
+            routineScheduler.shutdown();
         }
         if (mScanDeviceList != null){
             // デバイスリストを保存
@@ -308,10 +391,11 @@ public class BleScanTask  implements Runnable {
         }
     }
 
-    private void update(BluetoothDevice newDevice, int rssi, ScanResult result) {
-        if (newDevice == null || newDevice.getAddress() == null || newDevice.getAddress().isEmpty()) {
+    private boolean checkScanResult(ScanResult result){
+        BluetoothDevice device = result.getDevice();
+        if (device == null || device.getAddress() == null || device.getAddress().isEmpty()) {
             // アドレスが未設定のデータは対象外
-            return;
+            return false;
         }
         SparseArray<byte[]> mnfrData = null;
         Integer advertiseFlags = null;
@@ -320,12 +404,21 @@ public class BleScanTask  implements Runnable {
             advertiseFlags = result.getScanRecord().getAdvertiseFlags();
         } else {
             // スキャンレコードが無いデータは対象外
-            return;
+            return false;
         }
         if( advertiseFlags == -1 || (advertiseFlags & (BLE_CAPABLE_CONTROLLER | BLE_CAPABLE_HOST)) == 0){
             // DeviceCapableにControllerとHostが無い場合は対象外
-            return;
+            return false;
         }
+        return true;
+    }
+
+    private void update(ScanResult result) {
+        final BluetoothDevice newDevice = result.getDevice();
+        final int rssi = result.getRssi();
+        final SparseArray<byte[]> mnfrData = result.getScanRecord().getManufacturerSpecificData();
+        final int advertiseFlags = result.getScanRecord().getAdvertiseFlags();
+
         // スキャン日時を取得
         long rxTimestampMillis = System.currentTimeMillis() - SystemClock.elapsedRealtime() + result.getTimestampNanos() / 1000000;
         Date scanDate = new Date(rxTimestampMillis);
@@ -359,7 +452,7 @@ public class BleScanTask  implements Runnable {
                                 device.setmSaved2mFlag(true);
                                 // many near red
                                 debug_log(scanDate, newDevice, rssi,1,(rxTimestampMillis - device.getmStartTime()), mnfrData,0,0, advertiseFlags);
-                                Log.d(TAG, "alert count up");
+                                //Log.d(TAG, "alert count up");
                             }
                         }
                         else{
@@ -486,11 +579,20 @@ public class BleScanTask  implements Runnable {
     }
 
     private int getDelayMillisToNextMinute(){
-        Calendar nextMinute = Calendar.getInstance();
-        nextMinute.set(Calendar.SECOND, 0);
-        nextMinute.set(Calendar.MILLISECOND, 0);
-        nextMinute.add(Calendar.MINUTE, 1);
-        return (int)(nextMinute.getTime() .getTime() - new Date().getTime());
+        Calendar nextTime = Calendar.getInstance();
+        nextTime.set(Calendar.SECOND, 0);
+        nextTime.set(Calendar.MILLISECOND, 0);
+        nextTime.add(Calendar.MINUTE, 1);
+        return (int)(nextTime.getTime() .getTime() - new Date().getTime());
+    }
+
+    private int getDelayMillisToNext10Minute(){
+        Calendar nextTime = Calendar.getInstance();
+        final int minute = nextTime.get(Calendar.MINUTE);
+        nextTime.set(Calendar.SECOND, 0);
+        nextTime.set(Calendar.MILLISECOND, 0);
+        nextTime.set(Calendar.MINUTE, ((minute/10)+1)*10);
+        return (int)(nextTime.getTime().getTime() - new Date().getTime());
     }
 
     private String getDateTimeText(Date date) {
