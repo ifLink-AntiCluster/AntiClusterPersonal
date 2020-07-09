@@ -152,7 +152,7 @@ public class SettingFragment extends Fragment {
             }
         });
 
-        int updateMethod = MainActivity.prefs.getInt("update_method", UpdateMethod.SEQUENTIAL);
+        int updateMethod = MainActivity.prefs.getInt("update_method", UpdateMethod.EVERY_TIME);
         switch (updateMethod){
             case UpdateMethod.EVERY_TIME:
                 mUpdateMethodGroup.check(R.id.rb_update_method2);
