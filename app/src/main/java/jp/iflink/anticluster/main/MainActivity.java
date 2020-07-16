@@ -35,6 +35,7 @@ import jp.iflink.anticluster.logging.LoggingTask;
 import android.content.pm.PackageManager;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -79,8 +80,8 @@ public class MainActivity extends AppCompatActivity {
                 R.id.nav_home,
                 R.id.nav_setting
         )
-                .setDrawerLayout(drawer)
-                .build();
+        .setDrawerLayout(drawer)
+        .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
@@ -102,18 +103,23 @@ public class MainActivity extends AppCompatActivity {
 
     private void startMainService(){
         // パラメータの取得
-        boolean  logging_task = getResources().getBoolean(R.bool.logging_task);
+        boolean logging_task = getResources().getBoolean(R.bool.logging_task);
         // メインサービスの開始
         Intent serviceIntent = new Intent(this, MainService.class);
         serviceIntent.putExtra(BleScanTask.NAME, true);
         serviceIntent.putExtra(LoggingTask.NAME, logging_task);
 
+        ComponentName service;
         if (Build.VERSION.SDK_INT >= 26) {
             // Android8以降の場合
-            startForegroundService(serviceIntent);
+            service = startForegroundService(serviceIntent);
         } else {
             // Android7以前の場合
-            startService(serviceIntent);
+            service = startService(serviceIntent);
+        }
+        if (service != null){
+            // 既にサービスが起動済みの場合は、サービスにバインドする
+            bindService(serviceIntent, mServiceConnection, 0);
         }
     }
 
@@ -144,9 +150,13 @@ public class MainActivity extends AppCompatActivity {
         // メインサービスのアンバインド
         unbindService(mServiceConnection);
         mService = null;
-        // メインサービスの停止
-        Intent serviceIntent = new Intent(this, MainService.class);
-        stopService(serviceIntent);
+        // バックグラウンド動作判定
+        boolean runInBackground = prefs.getBoolean("runin_background", false);
+        if (!runInBackground){
+            // バックグラウンド動作しない場合、メインサービスを停止
+            Intent serviceIntent = new Intent(this, MainService.class);
+            stopService(serviceIntent);
+        }
     }
 
     @Override

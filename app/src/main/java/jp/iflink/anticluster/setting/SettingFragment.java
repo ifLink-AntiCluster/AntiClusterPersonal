@@ -38,8 +38,6 @@ public class SettingFragment extends Fragment {
     private RadioGroup mScanIntervalGroup;
     private int mScanSetting;
 
-    private int mCheckBoxValue;
-
     private CheckBox mLoggingCheck;
     private int mLoggingCheckValue;
 
@@ -55,6 +53,9 @@ public class SettingFragment extends Fragment {
         //  毎回指定分毎
         public static final int EVERY_TIME = 2;
     };
+
+    private CheckBox mRunInBackground;
+    private boolean mRunInBackgroundValue;
 
     private EditText mSendUUID;
 
@@ -77,11 +78,13 @@ public class SettingFragment extends Fragment {
         mUpdateSetting = root.findViewById(R.id.et_update_time);
         mUpdatePerMinutes = root.findViewById(R.id.et_update_per_minuts);
         mSendUUID =  root.findViewById(R.id.et_send_uuid);
-
         mScanIntervalGroup = root.findViewById(R.id.rg_scan_interval);
         mLoggingCheck = root.findViewById(R.id.logging_setting);
+        mRunInBackground = root.findViewById(R.id.background_mode);
 
         final Resources res = getResources();
+
+        // アプリケーションのログを残す設定
         int logging_setting = Integer.parseInt(MainActivity.prefs.getString("logging_setting", res.getString(R.string.default_logging_setting)));
         if(logging_setting==0){
             mLoggingCheck.setChecked(false);
@@ -104,6 +107,18 @@ public class SettingFragment extends Fragment {
             }
         });
 
+        // バックグラウンドで動作の設定
+        boolean runin_background = MainActivity.prefs.getBoolean("runin_background", false);
+        mRunInBackground.setChecked(runin_background);
+        mRunInBackgroundValue = runin_background;
+        mRunInBackground.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRunInBackgroundValue =  ((CheckBox)v).isChecked();
+            }
+        });
+
+        // BLE設定（スキャンモード）
         int scanSetting = Integer.parseInt(MainActivity.prefs.getString("scan_setting", String.valueOf(0))) ;
         switch (scanSetting){
             case 1:
@@ -134,6 +149,7 @@ public class SettingFragment extends Fragment {
             }
         });
 
+        // カウント更新の設定
         mUpdateMethodGroup = root.findViewById(R.id.rg_update_method);
         mUpdateMethodGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -194,12 +210,12 @@ public class SettingFragment extends Fragment {
                 editor.putString("judge_line3",mJudgeLine3.getText().toString());
                 editor.putString("judge_line4",mJudgeLine4.getText().toString());
                 editor.putString("judge_line5",mJudgeLine5.getText().toString());
-                editor.putString("device_name_check",String.valueOf(mCheckBoxValue));
                 editor.putString("logging_setting",String.valueOf(mLoggingCheckValue));
                 editor.putString("update_time",mUpdateSetting.getText().toString());
                 editor.putString("send_uuid",mSendUUID.getText().toString());
                 editor.putInt("update_method",mUpdateMethod);
                 editor.putInt("update_per_minutes",Integer.valueOf(mUpdatePerMinutes.getText().toString()));
+                editor.putBoolean("runin_background", mRunInBackgroundValue);
                 editor.apply();
                 showMessage(res.getString(R.string.finish_save));
             }

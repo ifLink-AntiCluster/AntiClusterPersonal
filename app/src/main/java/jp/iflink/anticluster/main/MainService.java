@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
@@ -38,6 +39,8 @@ public class MainService extends IntentService {
             return MainService.this;
         }
     }
+    // ステータス
+    private static boolean running;
 
     // コンストラクタ
     public MainService() {
@@ -56,12 +59,21 @@ public class MainService extends IntentService {
         execute(intent);
     }
 
-    public void execute(Intent intent){
+    public void execute(@Nullable Intent intent){
         Log.d(TAG, "service execute");
         // パラメータを取得
-        boolean blescan_task = intent.getBooleanExtra(BleScanTask.NAME, false);
-        boolean logging_task = intent.getBooleanExtra(LoggingTask.NAME, false);
-        Log.d(TAG, "blescan_task="+blescan_task+", logging_task="+logging_task);
+        boolean blescan_task;
+        boolean logging_task;
+        if (intent != null){
+            blescan_task = intent.getBooleanExtra(BleScanTask.NAME, false);
+            logging_task = intent.getBooleanExtra(LoggingTask.NAME, false);
+        } else {
+            blescan_task = true;
+            logging_task = false;
+        }
+        Log.d(TAG, "blescan_task="+blescan_task+", logging_task="+logging_task+", intent="+intent);
+        // 前回のタスクが残っている場合は事前に停止
+        stopTask();
         if (blescan_task){
             // BLEスキャンタスクを起動
             this.bleScanTask = new BleScanTask();
@@ -75,7 +87,8 @@ public class MainService extends IntentService {
             loggingTask.init(getApplicationContext());
             new Thread(loggingTask).start();
         }
-        while (bleScanTask != null || loggingTask != null) {
+        running = true;
+        while (running && (bleScanTask != null || loggingTask != null)) {
             Thread.yield();
         }
     }
@@ -94,8 +107,10 @@ public class MainService extends IntentService {
             // Android8以降の場合、フォアグラウンド開始処理を実施
             startForeground();
         }
-        // Serviceがkillされたときは再起動しない
-        return super.onStartCommand(intent, flags, startId);
+        super.onStartCommand(intent, flags, startId);
+        // Serviceがkillされたときは再起動する
+        // kill後に即起動させる為、START_STICKYを指定（intentはnullになる）
+        return START_STICKY;
     }
 
     @RequiresApi(api = 26)
@@ -113,12 +128,17 @@ public class MainService extends IntentService {
         NotificationChannel channel =
                 new NotificationChannel(CHANNEL_ID, TITLE, NotificationManager.IMPORTANCE_DEFAULT);
         if(notificationManager != null) {
+            // 通知バーをタップした時のIntentを作成
+            Intent notifyIntent  = new Intent(context, MainActivity.class);
+            notifyIntent.putExtra("fromNotification", true);
+            PendingIntent intent = PendingIntent.getActivity(context, 0, notifyIntent, PendingIntent.FLAG_CANCEL_CURRENT);
             // サービス起動の通知を送信
             notificationManager.createNotificationChannel(channel);
             Notification notification = new Notification.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_stat)
                     .setContentTitle(TITLE)
                     .setContentText(CONTENT_TEXT)
+                    .setContentIntent(intent)
                     .build();
             // フォアグラウンドで実行
             startForeground(1, notification);
@@ -129,13 +149,25 @@ public class MainService extends IntentService {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "service done");
-        // BLEスキャンタスクを停止
-        if (bleScanTask != null){
-            this.bleScanTask.stop();
-        }
-        // ロギングタスクを停止
-        if (loggingTask != null){
-            this.loggingTask.stop();
+        // タスクを停止
+        stopTask();
+    }
+
+    protected void stopTask(){
+        running = false;
+        try {
+            // BLEスキャンタスクを停止
+            if (bleScanTask != null) {
+                this.bleScanTask.stop();
+                this.bleScanTask = null;
+            }
+            // ロギングタスクを停止
+            if (loggingTask != null) {
+                this.loggingTask.stop();
+                this.loggingTask = null;
+            }
+        } catch (Exception e){
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 

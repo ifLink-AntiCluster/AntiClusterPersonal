@@ -87,6 +87,7 @@
 	<string name="update_method_everytime">毎回</string>
 	<string name="update_method_per_minutes">分毎</string>
 	<integer name="default_update_per_minutes">1</integer>
+	<string name="runin_background">バックグラウンドで動作</string>
 	<!-- データ送信設定値 -->
 	<string name="send_data_UUID">0000b81d-0000-1000-8000-00805f9b34fb</string>
 	<string name="send_data_timeout_millis">10000</string>
