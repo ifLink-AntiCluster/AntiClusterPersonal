@@ -35,7 +35,7 @@ public class GraphManager {
     private DataStore dataStore;
     private Date baseDate;
 
-    private enum GraphKind {G4Hours, G1Day, G2Week}
+    public enum GraphKind {G4Hours, G1Day, G2Week}
     private GraphKind currentGraph;
 
 //    public GraphManager() {}
@@ -202,6 +202,10 @@ public class GraphManager {
         update(labels, counter_info, 14);
         // 期間中最大値情報の取得、返却
         return getMaxValueInfo(counter_info);
+    }
+
+    public GraphKind getCurrentGraph(){
+       return currentGraph;
     }
 
     private void setupXAxis(String[] labels, int labelCount){

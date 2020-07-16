@@ -51,6 +51,7 @@ public class HomeFragment extends Fragment {
     private ToggleButton m4Hours;
     private ToggleButton m1Day;
     private ToggleButton m2Week;
+    private GraphManager.GraphKind currentGraph;
 
     // レベル値
     public static short mLevelValue;
@@ -65,7 +66,7 @@ public class HomeFragment extends Fragment {
     private TextView mValueMode;
     // 集計値モード定数
     private enum ValueMode {REALTIME, DURINGMAX}
-    private ValueMode valueMode = ValueMode.REALTIME;
+    private ValueMode valueMode;
     // 現在値表示テーブル
     private TableLayout mTableRealtime;
     // 期間中最大値表示テーブル
@@ -79,7 +80,7 @@ public class HomeFragment extends Fragment {
     private ImageView mLevel5_Image;
 
     // 画面更新用タイマー
-    private Timer screenUpdateTimer ;
+    private Timer screenUpdateTimer;
     // データ集計用タイマー
     private Timer recordTimeTimer;
 
@@ -148,11 +149,14 @@ public class HomeFragment extends Fragment {
         mDuringMaxAlert = root.findViewById(R.id.tv_duringmax_alert);
         mDuringMaxCaution = root.findViewById(R.id.tv_duringmax_caution);
         mDuringMaxDistant = root.findViewById(R.id.tv_duringmax_distant);
+        mDuringMaxAlert.setText("");
+        mDuringMaxCaution.setText("");
+        mDuringMaxDistant.setText("");
 
         mRecordTime = root.findViewById(R.id.tv_recordtime);
         mRecordTimeBlock = root.findViewById(R.id.tv_recordtime_block);
 
-        Resources resources = getResources();
+        final Resources resources = getResources();
         final String title_hour = resources.getString(R.string.title_hour);
         final String title_day = resources.getString(R.string.title_day);
         final String title_period = resources.getString(R.string.title_period);
@@ -182,6 +186,7 @@ public class HomeFragment extends Fragment {
                     mPeriod.setText(title_hour);
                     // 4Hoursのグラフを更新
                     CounterDevice maxValueInfo = graphManager.updateGraph4Hours();
+                    currentGraph = graphManager.getCurrentGraph();
                     if (maxValueInfo != null){
                         // 期間中最大値を更新
                         mDuringMaxAlert.setText(String.valueOf(maxValueInfo.mAlertCounter));
@@ -222,6 +227,7 @@ public class HomeFragment extends Fragment {
                     mPeriod.setText(title_day.replace("{0}",dayText));
                     // 1Dayのグラフを更新
                     CounterDevice maxValueInfo = graphManager.updateGraph1Day();
+                    currentGraph = graphManager.getCurrentGraph();
                     if (maxValueInfo != null){
                         // 期間中最大値を更新
                         mDuringMaxAlert.setText(String.valueOf(maxValueInfo.mAlertCounter));
@@ -267,6 +273,7 @@ public class HomeFragment extends Fragment {
                     mPeriod.setText(title_period.replace("{0}",dayFromText).replace("{1}",dayToText));
                     // 2Weekのグラフを更新
                     CounterDevice maxValueInfo = graphManager.updateGraph2Week();
+                    currentGraph = graphManager.getCurrentGraph();
                     if (maxValueInfo != null){
                         // 期間中最大値を更新
                         mDuringMaxAlert.setText(String.valueOf(maxValueInfo.mAlertCounter));
@@ -287,8 +294,6 @@ public class HomeFragment extends Fragment {
 
         // 集計値モードテキスト
         mValueMode = root.findViewById(R.id.tv_valueMode);
-        final String realtime = resources.getString(R.string.realtime);
-        final String duringmax = resources.getString(R.string.duringmax);
         // 現在値表示テーブル
         mTableRealtime = root.findViewById(R.id.table_realtime);
         // 期間中最大値表示テーブル
@@ -301,17 +306,11 @@ public class HomeFragment extends Fragment {
                 if (valueMode == ValueMode.REALTIME){
                     // 集計値モードを期間最大値に切り替え
                     valueMode = ValueMode.DURINGMAX;
-                    mValueMode.setText(duringmax);
-                    // テーブルの表示切替
-                    mTableRealtime.setVisibility(View.GONE);
-                    mTableDuringmax.setVisibility(View.VISIBLE);
+                    changeValueMode(valueMode, resources);
                 } else {
                     // 集計値モードを現在値に切り替え
                     valueMode = ValueMode.REALTIME;
-                    mValueMode.setText(realtime);
-                    // テーブルの表示切替
-                    mTableDuringmax.setVisibility(View.GONE);
-                    mTableRealtime.setVisibility(View.VISIBLE);
+                    changeValueMode(ValueMode.REALTIME, resources);
                 }
             }
         });
@@ -321,6 +320,22 @@ public class HomeFragment extends Fragment {
         mDataSend.setOnClickListener(new SendDataListener());
 
         return root;
+    }
+
+    private void changeValueMode(final ValueMode valueMode, final Resources resources){
+        if (valueMode == ValueMode.DURINGMAX){
+            // 集計値モードを期間最大値に切り替え
+            mValueMode.setText(resources.getString(R.string.duringmax));
+            // テーブルの表示切替
+            mTableRealtime.setVisibility(View.GONE);
+            mTableDuringmax.setVisibility(View.VISIBLE);
+        } else {
+            // 集計値モードを現在値に切り替え
+            mValueMode.setText(resources.getString(R.string.realtime));
+            // テーブルの表示切替
+            mTableDuringmax.setVisibility(View.GONE);
+            mTableRealtime.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -338,7 +353,15 @@ public class HomeFragment extends Fragment {
         m4HoursPushFlag = FALSE;
         mDayPushFlag = FALSE;
         m2WeekPushFlag = FALSE;
-
+        // 初期選択
+        valueMode = ValueMode.REALTIME;
+        currentGraph = GraphManager.GraphKind.G1Day;
+        // 保存状態の復元
+        if (savedInstanceState != null){
+            //showMessage("onCreate graph="+savedInstanceState.getString("currentGraph")+" valueMode="+savedInstanceState.getString("valueMode"));
+            valueMode = ValueMode.valueOf(savedInstanceState.getString("valueMode", this.valueMode.name()));
+            currentGraph = GraphManager.GraphKind.valueOf(savedInstanceState.getString("currentGraph", this.currentGraph.name()));
+        }
     }
 
     @Override
@@ -350,9 +373,9 @@ public class HomeFragment extends Fragment {
         mRealTimeCaution.setText("");
         mRealTimeDistant.setText("");
 
-        mDuringMaxAlert.setText("");
-        mDuringMaxCaution.setText("");
-        mDuringMaxDistant.setText("");
+        //mDuringMaxAlert.setText("");
+        //mDuringMaxCaution.setText("");
+        //mDuringMaxDistant.setText("");
 
         Resources resources = getResources();
         mAlertDistance = Integer.parseInt(MainActivity.prefs.getString("rssi_2m", resources.getString(R.string.default_rssi)));
@@ -455,8 +478,27 @@ public class HomeFragment extends Fragment {
             mRecordTime.setText(getDateTimeText(mPrevRecordTime));
             mRecordTimeBlock.setVisibility(View.VISIBLE);
         }
-        // グラフの初期選択：1日
-        m1Day.setChecked(true);
+        //showMessage("onStart graph="+currentGraph.name()+" valueMode="+valueMode.name());
+        // グラフの初期選択
+        if (currentGraph == null){
+            // グラフの初期選択：1日
+            m1Day.setChecked(true);
+        } else {
+            // グラフの再選択
+            switch (currentGraph){
+                case G4Hours:
+                    m4Hours.setChecked(true);
+                    break;
+                case G1Day:
+                    m1Day.setChecked(true);
+                    break;
+                case G2Week:
+                    m2Week.setChecked(true);
+                    break;
+            }
+        }
+        // 集計値モードの初期選択
+        changeValueMode(valueMode, resources);
     }
 
     private boolean isJustTimeMinuteOf(int minute){
@@ -501,10 +543,27 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "HomeFragment onDestroy");
         if (screenUpdateTimer != null){
             screenUpdateTimer.cancel();
+            screenUpdateTimer = null;
         }
         if (recordTimeTimer != null){
             recordTimeTimer.cancel();
+            recordTimeTimer = null;
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // グラフの選択状態を保存
+        if (graphManager != null){
+            GraphManager.GraphKind currentGraph = graphManager.getCurrentGraph();
+            if (currentGraph != null){
+                outState.putString("currentGraph", currentGraph.name());
+            }
+        }
+        // 集計値切り替えボタンの状態を保存
+        outState.putString("valueMode", valueMode.name());
+        //showMessage("onSaveInstanceState graph="+outState.getString("currentGraph")+" valueMode="+outState.getString("valueMode"));
     }
 
     private BleScanTask getBleScanTask(){
@@ -516,7 +575,6 @@ public class HomeFragment extends Fragment {
     }
 
     private void updateRiskLevel(CounterDevice maxValueInfo){
-
         // 期間中最大値の取得
         int alertCounter = 0;
         int cautionCounter = 0;
