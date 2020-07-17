@@ -39,9 +39,9 @@ Advertisingパケットをスキャンするタイミングおよび電波強度
 （一般的に、スキャン頻度を上げるとバッテリー性能は低下します）<br>
 
 電波強度および継続時間に応じた近接判定の閾値も、設定画面で変更可能です。<br>
-濃厚接触の判定は、初期設定では-80dBm以上で15分以上です。<br>
+濃厚接触の判定は、初期設定では-65dBm以上で15分以上です。<br>
 濃厚接触の電波強度以上で継続時間に達するまでは、至近距離と判定されます。<br>
-濃厚接触の電波強度未満の場合、「周囲」の判定基準が適用されます。これは初期設定では-100dBm超過です。<br>
+濃厚接触の電波強度未満の場合、「周囲」の判定基準が適用されます。これは初期設定では-85dBm超過です。<br>
 「周囲」の判定基準未満の場合は、カウント対象外となります。
 
 ## Risk level calculation
@@ -165,9 +165,9 @@ The default setting is Low power (scan once every 5 seconds for 0.5 seconds), bu
 (In general, the more often you scan, the less battery performance you'll get.)<br>
 
 Thresholds for proximity determination based on radio wave strength and duration can also be changed on the setting screen.<br>
-By default, the concentration contact is determined to be -80dBm or more for 15 minutes or more.<br>
+By default, the concentration contact is determined to be -65dBm or more for 15 minutes or more.<br>
 It is judged to be a close-range contact until it reaches the duration of the radio wave strength of the close contact or higher.<br>
-If the radio wave strength is less than the strength of the close contact, the "ambient" judgment criteria apply. This is in excess of -100dBm by default.<br>
+If the radio wave strength is less than the strength of the close contact, the "ambient" judgment criteria apply. This is in excess of -85dBm by default.<br>
 If it is less than the judgment criteria of "surrounding", it is not counted.
 
 ## Risk level calculation
