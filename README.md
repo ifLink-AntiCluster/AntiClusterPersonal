@@ -106,7 +106,7 @@ Android OS8.0以降に対応しています。
 
 ## Sample Application
 ソースコードをビルドしたサンプルアプリケーションを登録しています。<br>
-[SampleApplication](https://github.com/ifLink-AntiCluster/AntiCluster/raw/master/SampleApplication/anticluster_1.0.3.apk)
+[SampleApplication](https://github.com/ifLink-AntiCluster/AntiCluster/raw/master/SampleApplication/anticluster_1.0.4.apk)
 
 ## Community
 リクエスト、質問、バグリポートがある場合、GitHubのissue機能を使用して下さい。
