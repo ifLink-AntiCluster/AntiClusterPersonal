@@ -86,6 +86,7 @@
 	<string name="update_method_sequential">逐次</string>
 	<string name="update_method_everytime">毎回</string>
 	<string name="update_method_per_minutes">分毎</string>
+	<integer name="default_update_method" translatable="false">1</integer>
 	<integer name="default_update_per_minutes">1</integer>
 	<string name="runin_background">バックグラウンドで動作</string>
 	<!-- データ送信設定値 -->

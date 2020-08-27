@@ -38,8 +38,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -50,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jp.iflink.anticluster.R;
 import jp.iflink.anticluster.main.MainActivity;
+import jp.iflink.anticluster.model.CountType;
 
 import static jp.iflink.anticluster.setting.SettingFragment.UpdateMethod;
 import static jp.iflink.anticluster.main.MainActivity.prefs;
@@ -79,8 +78,8 @@ public class BleScanTask  implements Runnable {
     private List<ScannedDevice> mScanDeviceList;
 
     // 設定値
-    private int THRESHOLD_2M;
-    private int THRESHOLD_10M;
+    private int THRESHOLD_NEAR;
+    private int THRESHOLD_AROUND;
     private int ALERT_TIMER;
     private int LOGGING_SETTING;
 
@@ -109,8 +108,7 @@ public class BleScanTask  implements Runnable {
     private static final int BLE_CAPABLE_CONTROLLER = 0x08;
     private static final int BLE_CAPABLE_HOST = 0x10;
     // BLE Company code
-    private static final int COMPANY_CODE_APPLE = 0x004C;
-    private static final int IPHONE_THRESHOLD = -80;
+    private static final int COMPANY_CODE_MICROSOFT = 0x0006;
     // update method and per minutes
     private int mUpdateMethod;
     private int mUpdatePerMinutes;
@@ -123,11 +121,11 @@ public class BleScanTask  implements Runnable {
             this.mScanDeviceList = loadList("device_list");
             // Alert,Caution,Distantを復元
             for (ScannedDevice device : this.mScanDeviceList) {
-                if(device.getmSaved2mFlag()){
+                if(device.getAlertFlag()){
                     mAlertCounter.incrementAndGet();
                 }
                 else {
-                    if( THRESHOLD_2M <= device.getRssi()){
+                    if( THRESHOLD_NEAR <= device.getRssi()){
                         mCautionCounter.incrementAndGet();
                     }
                     else{
@@ -266,8 +264,8 @@ public class BleScanTask  implements Runnable {
 
         // 設定値の読み込み
         Resources resources = applicationContext.getResources();
-        this.THRESHOLD_2M = Integer.parseInt(prefs.getString("rssi_2m",resources.getString(R.string.default_rssi)));
-        this.THRESHOLD_10M = Integer.parseInt(prefs.getString("rssi_around",resources.getString(R.string.default_around_rssi)));
+        this.THRESHOLD_NEAR = Integer.parseInt(prefs.getString("rssi_2m",resources.getString(R.string.default_rssi)));
+        this.THRESHOLD_AROUND = Integer.parseInt(prefs.getString("rssi_around",resources.getString(R.string.default_around_rssi)));
         this.ALERT_TIMER = Integer.parseInt(prefs.getString("alert_timer",resources.getString(R.string.default_alert_timer)));
         this.LOGGING_SETTING = Integer.parseInt(prefs.getString("logging_setting",resources.getString(R.string.default_logging_setting)));
 
@@ -297,7 +295,7 @@ public class BleScanTask  implements Runnable {
         int scan_setting = Integer.parseInt(prefs.getString("scan_setting",String.valueOf(0)));
         // カウント更新方法の取得
         Resources resources = applicationContext.getResources();
-        mUpdateMethod = MainActivity.prefs.getInt("update_method", UpdateMethod.SEQUENTIAL);
+        mUpdateMethod = MainActivity.prefs.getInt("update_method", resources.getInteger(R.integer.default_update_method));
         mUpdatePerMinutes = MainActivity.prefs.getInt("update_per_minutes", resources.getInteger(R.integer.default_update_per_minutes));
 
         ScanSettings.Builder scanSettings = new ScanSettings.Builder();
@@ -397,8 +395,12 @@ public class BleScanTask  implements Runnable {
             // アドレスが未設定のデータは対象外
             return false;
         }
-        SparseArray<byte[]> mnfrData = null;
-        Integer advertiseFlags = null;
+        if (device.getName() != null  && !device.getName().isEmpty()) {
+            // デバイス名が設定されているデータは対象外
+            return false;
+        }
+        SparseArray<byte[]> mnfrData;
+        int advertiseFlags;
         if (result.getScanRecord() != null){
             mnfrData = result.getScanRecord().getManufacturerSpecificData();
             advertiseFlags = result.getScanRecord().getAdvertiseFlags();
@@ -406,8 +408,12 @@ public class BleScanTask  implements Runnable {
             // スキャンレコードが無いデータは対象外
             return false;
         }
-        if( advertiseFlags == -1 || (advertiseFlags & (BLE_CAPABLE_CONTROLLER | BLE_CAPABLE_HOST)) == 0){
+        if (advertiseFlags == -1 || (advertiseFlags & (BLE_CAPABLE_CONTROLLER | BLE_CAPABLE_HOST)) == 0){
             // DeviceCapableにControllerとHostが無い場合は対象外
+            return false;
+        }
+        if (mnfrData.get(COMPANY_CODE_MICROSOFT) != null){
+            // Microsoft Advertising Beaconの場合は、WindowsPCと判断し除外
             return false;
         }
         return true;
@@ -427,11 +433,11 @@ public class BleScanTask  implements Runnable {
 
         for (ScannedDevice device : this.mScanDeviceList) {
             // 受信済みチェック
-            if (newDevice.getAddress().equals(device.getDevice().getAddress())) {
+            if (newDevice.getAddress().equals(device.getDeviceAddress())) {
                 // 受信済みの場合
                 contains = true;
                 device.setRssi(rssi); // update
-                if(THRESHOLD_2M <= rssi){
+                if(THRESHOLD_NEAR <= rssi){
                     if(!device.getm1stDetect()){
                         device.setmStartTime(rxTimestampMillis);
                         device.setm1stDetect(true);
@@ -439,7 +445,7 @@ public class BleScanTask  implements Runnable {
                         debug_log(scanDate, newDevice, rssi,1,0, mnfrData,0,1, advertiseFlags);
                     }
                     else{
-                        if(!device.getmSaved2mFlag()) {
+                        if(!device.getAlertFlag()) {
                             device.setCurrentTime(rxTimestampMillis);
                             // many near yellow
                             debug_log(scanDate, newDevice, rssi,1,(rxTimestampMillis - device.getmStartTime()), mnfrData,0,1, advertiseFlags);
@@ -448,8 +454,8 @@ public class BleScanTask  implements Runnable {
                                 if (mCautionCounter.getAndDecrement()==0){
                                     mCautionCounter.set(0);
                                 }
-
-                                device.setmSaved2mFlag(true);
+                                device.setCountType(CountType.ALERT);
+                                device.setAlertFlag(true);
                                 // many near red
                                 debug_log(scanDate, newDevice, rssi,1,(rxTimestampMillis - device.getmStartTime()), mnfrData,0,0, advertiseFlags);
                                 //Log.d(TAG, "alert count up");
@@ -462,7 +468,7 @@ public class BleScanTask  implements Runnable {
                         }
                     }
                 }
-                else if(THRESHOLD_10M < rssi){
+                else if(THRESHOLD_AROUND < rssi){
                     device.setm1stDetect(false);
                     // many around purple
                     debug_log(scanDate, newDevice, rssi,1,(rxTimestampMillis - device.getmStartTime()), mnfrData,1,1, advertiseFlags);
@@ -476,22 +482,24 @@ public class BleScanTask  implements Runnable {
             }
         }
         if (!contains) {
+            ScannedDevice device = new ScannedDevice(newDevice, rssi);
+            device.setCurrentTime(rxTimestampMillis);
+            this.mScanDeviceList.add(device);
             // add new BluetoothDevice
-            if(newDevice.getName() == null || newDevice.getName().isEmpty()) {
-                if (THRESHOLD_2M <= rssi) {
-                    this.mScanDeviceList.add(new ScannedDevice(newDevice, rssi));
-                    mCautionCounter.incrementAndGet();
-                    // once near yellow
-                    debug_log(scanDate, newDevice, rssi,0,0, mnfrData,0, 1, advertiseFlags);
-                } else if (THRESHOLD_10M < rssi) {
-                    this.mScanDeviceList.add(new ScannedDevice(newDevice, rssi));
-                    mDistantCounter.incrementAndGet();
-                    // once around purple
-                    debug_log(scanDate, newDevice, rssi,0,0, mnfrData,1,2, advertiseFlags);
-                } else {
-                    // once far purple
-                    debug_log(scanDate, newDevice, rssi,0,0, mnfrData,2,2, advertiseFlags);
-                }
+            if (THRESHOLD_NEAR <= rssi) {
+                mCautionCounter.incrementAndGet();
+                device.setCountType(CountType.CAUTION);
+                // once near yellow
+                debug_log(scanDate, newDevice, rssi,0,0, mnfrData,0, 1, advertiseFlags);
+            } else if (THRESHOLD_AROUND < rssi) {
+                mDistantCounter.incrementAndGet();
+                device.setCountType(CountType.DISTANT);
+                // once around purple
+                debug_log(scanDate, newDevice, rssi,0,0, mnfrData,1,2, advertiseFlags);
+            } else {
+                device.setCountType(CountType.FAR);
+                // once far purple
+                debug_log(scanDate, newDevice, rssi,0,0, mnfrData,2,2, advertiseFlags);
             }
         }
     }
@@ -508,12 +516,12 @@ public class BleScanTask  implements Runnable {
         return mDistantCounter.get();
     }
 
-    void setThreshold_2m(int threshold){
-        this.THRESHOLD_2M = threshold;
+    void setThresholdNear(int threshold){
+        this.THRESHOLD_NEAR = threshold;
     }
 
-    void setThreshold_10m(int threshold){
-        this.THRESHOLD_10M = threshold;
+    void setThresholdAround(int threshold){
+        this.THRESHOLD_AROUND = threshold;
     }
 
     void setAlertTimer(int timer){
@@ -531,7 +539,7 @@ public class BleScanTask  implements Runnable {
         while(listIt.hasNext()) {
             ScannedDevice device = listIt.next();
             long deviceTime = device.getmCurrentTime();
-            if((device.getmSaved2mFlag())&&(( systemTime - deviceTime)>(ALERT_TIMER*60*1000))){
+            if((device.getAlertFlag())&&(( systemTime - deviceTime)>(ALERT_TIMER*60*1000))){
                 mAlertCounter.decrementAndGet();
                 if (mAlertCounter.get()<0){
                     mAlertCounter.set(0);
@@ -541,7 +549,7 @@ public class BleScanTask  implements Runnable {
             else if(!device.getm1stDetect()){
                 listIt.remove();
             }
-            else if(!device.getmSaved2mFlag()&&((systemTime - deviceTime)>(ALERT_TIMER*60*1000))){
+            else if(!device.getAlertFlag()&&((systemTime - deviceTime)>(ALERT_TIMER*60*1000))){
                 listIt.remove();
             }
         }
@@ -555,6 +563,7 @@ public class BleScanTask  implements Runnable {
     SharedPreferences.Editor editor = MainActivity.prefs.edit();
         editor.putString(key, gson.toJson(list));
         editor.apply();
+        editor.commit();
 }
 
     private static ArrayList<ScannedDevice> loadList(String key) {

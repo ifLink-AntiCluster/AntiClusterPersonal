@@ -2,12 +2,14 @@ package jp.iflink.anticluster.home;
 
 import android.bluetooth.BluetoothDevice;
 
+import jp.iflink.anticluster.model.CountType;
+
 import static java.lang.Boolean.FALSE;
 
 class ScannedDevice {
     private static final String UNKNOWN = "Unknown";
-    /** BluetoothDevice */
-    private BluetoothDevice mDevice;
+    /** BluetoothDevice Address */
+    private String mDeviceAddress;
     /** RSSI */
     private int mRssi;
     /** Display Name */
@@ -16,23 +18,20 @@ class ScannedDevice {
     private long mStartTime;
     /** Current Time **/
     private long mCurrentTime;
-    /** Saved flag **/
-    private boolean mSaved2mFlag;
-    /** Saved flag **/
-    private boolean mSaved10mFlag;
-    /** Distance **/
-    private int mDistance;
+    /** alert flag **/
+    private boolean mAlertFlag;
     /** 1st Detect flag **/
     private Boolean m1stDetect;
-
+    /** Count type */
+    private CountType countType;
 
     ScannedDevice(BluetoothDevice device, int rssi) {
         if (device == null) {
             throw new IllegalArgumentException("BluetoothDevice is null");
         }
-        mDevice = device;
+        mDeviceAddress = device.getAddress();
         mDisplayName = device.getName();
-        if ((mDisplayName == null) || (mDisplayName.length() == 0)) {
+        if (mDisplayName == null || mDisplayName.isEmpty()) {
             mDisplayName = UNKNOWN;
         }
         mRssi = rssi;
@@ -40,59 +39,31 @@ class ScannedDevice {
 
     }
 
-    BluetoothDevice getDevice() {
-        return mDevice;
-    }
+    public String getDeviceAddress() { return mDeviceAddress; }
 
-    int getRssi() {
-        return mRssi;
-    }
+    public int getRssi() { return mRssi;}
 
-    void setRssi(int rssi) {
-        mRssi = rssi;
-    }
+    public void setRssi(int rssi) { this.mRssi = rssi; }
 
-    String getDisplayName() {
-        return mDisplayName;
-    }
+    public String getDisplayName() { return mDisplayName; }
 
-    long getmStartTime() {
-        return mStartTime;
-    }
+    public long getmStartTime() { return mStartTime; }
 
-    void setmStartTime(long startTime) {
-        mStartTime = startTime;
-    }
+    public void setmStartTime(long startTime) { this.mStartTime = startTime; }
 
-    long getmCurrentTime() {
-        return mCurrentTime;
-    }
+    public long getmCurrentTime() { return mCurrentTime; }
 
-    void setCurrentTime(long currentTime) {
-        mCurrentTime = currentTime;
-    }
+    public void setCurrentTime(long currentTime) { this.mCurrentTime = currentTime; }
 
-    boolean getmSaved2mFlag() {
-        return mSaved2mFlag;
-    }
+    public boolean getAlertFlag() { return mAlertFlag; }
 
-    void setmSaved2mFlag(boolean flag) { mSaved2mFlag = flag; }
+    public void setAlertFlag(boolean flag) { this.mAlertFlag = flag; }
 
-    boolean getmSaved10mFlag() {
-        return mSaved10mFlag;
-    }
+    public boolean getm1stDetect() { return m1stDetect; }
 
-    void setmSaved10mFlag(boolean flag) { mSaved10mFlag = flag; }
+    public void setm1stDetect(boolean flag) { this.m1stDetect = flag; }
 
-    int getDistance() {
-        return mDistance;
-    }
+    public CountType getCountType() { return countType; }
 
-    void setDistance(int distance) {
-        mDistance = distance;
-    }
-
-    boolean getm1stDetect() { return m1stDetect; }
-
-    void setm1stDetect(boolean flag) { m1stDetect = flag; }
+    public void setCountType(CountType countType) { this.countType = countType; }
 }

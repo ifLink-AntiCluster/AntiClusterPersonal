@@ -368,11 +368,9 @@ public class HomeFragment extends Fragment {
     public void onStart() {
         super.onStart();
         Log.d(TAG, "HomeFragment onStart");
-
         mRealTimeAlert.setText("");
         mRealTimeCaution.setText("");
         mRealTimeDistant.setText("");
-
         //mDuringMaxAlert.setText("");
         //mDuringMaxCaution.setText("");
         //mDuringMaxDistant.setText("");
@@ -411,11 +409,10 @@ public class HomeFragment extends Fragment {
 
                             // 初期起動時の処理
                             if (m1st_Flag == FALSE) {
-                                bleService.setThreshold_2m(mAlertDistance);
+                                bleService.setThresholdNear(mAlertDistance);
                                 bleService.setAlertTimer(mAlertTimer);
-                                bleService.setThreshold_10m(mAroundDistance);
+                                bleService.setThresholdAround(mAroundDistance);
                                 bleService.setLoggingSetting(mLoggingSetting);
-
                                 m1st_Flag = TRUE;
                             }
                             // 現在値の更新
