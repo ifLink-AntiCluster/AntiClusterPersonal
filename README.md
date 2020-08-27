@@ -1,6 +1,6 @@
 ## About ifLink Anti Cluster
 
-English follows the Japanease.
+[English text follows the Japanese text.](#overview-1)
 
 ## Overview
 スマートフォンが発信する電波を利用して近接をカウントするアプリです。
@@ -42,7 +42,7 @@ Advertisingパケットをスキャンするタイミングおよび電波強度
 濃厚接触の判定は、初期設定では-65dBm以上で15分以上です。<br>
 濃厚接触の電波強度以上で継続時間に達するまでは、至近距離と判定されます。<br>
 濃厚接触の電波強度未満の場合、「周囲」の判定基準が適用されます。これは初期設定では-75dBm超過です。<br>
-「周囲」の判定基準未満の場合は、カウント対象外となります。
+「周囲」の判定基準以下の場合は、カウント対象外となります。
 
 ## Risk level calculation
 リスク判定の計算は、４時間／１日／２週間のそれぞれの期間で、期間中のカウントの最大値を元に行われます。<br>
@@ -168,7 +168,7 @@ Thresholds for proximity determination based on radio wave strength and duration
 By default, the concentration contact is determined to be -65dBm or more for 15 minutes or more.<br>
 It is judged to be a close-range contact until it reaches the duration of the radio wave strength of the close contact or higher.<br>
 If the radio wave strength is less than the strength of the close contact, the "ambient" judgment criteria apply. This is in excess of -75dBm by default.<br>
-If it is less than the judgment criteria of "surrounding", it is not counted.
+If it is less than or equal to the judgment criteria of "surrounding", it is not counted.
 
 ## Risk level calculation
 The calculation of the risk assessment is based on the maximum value of the count during the period for each of the four-hour, one-day and two-week periods.
