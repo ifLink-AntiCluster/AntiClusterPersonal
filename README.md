@@ -41,7 +41,7 @@ Advertisingパケットをスキャンするタイミングおよび電波強度
 電波強度および継続時間に応じた近接判定の閾値も、設定画面で変更可能です。<br>
 濃厚接触の判定は、初期設定では-65dBm以上で15分以上です。<br>
 濃厚接触の電波強度以上で継続時間に達するまでは、至近距離と判定されます。<br>
-濃厚接触の電波強度未満の場合、「周囲」の判定基準が適用されます。これは初期設定では-85dBm超過です。<br>
+濃厚接触の電波強度未満の場合、「周囲」の判定基準が適用されます。これは初期設定では-75dBm超過です。<br>
 「周囲」の判定基準未満の場合は、カウント対象外となります。
 
 ## Risk level calculation
@@ -102,11 +102,11 @@ XXXXXXXX-0000-1000-8000-00805f9b34fb（XXXXXXXXは8桁の16進数）
 - Gson
 - MPAndroid Chart
 
-Android OS8.0以降に対応しています。
+Android OS 7.0以降に対応しています。
 
 ## Sample Application
 ソースコードをビルドしたサンプルアプリケーションを登録しています。<br>
-[SampleApplication](https://github.com/ifLink-AntiCluster/AntiCluster/raw/master/SampleApplication/anticluster_1.0.4.apk)
+[SampleApplication/anticluster_1.0.5.apk](https://github.com/ifLink-AntiCluster/AntiCluster/raw/master/SampleApplication/anticluster_1.0.5.apk)
 
 ## Community
 リクエスト、質問、バグリポートがある場合、GitHubのissue機能を使用して下さい。
@@ -167,7 +167,7 @@ The default setting is Low power (scan once every 5 seconds for 0.5 seconds), bu
 Thresholds for proximity determination based on radio wave strength and duration can also be changed on the setting screen.<br>
 By default, the concentration contact is determined to be -65dBm or more for 15 minutes or more.<br>
 It is judged to be a close-range contact until it reaches the duration of the radio wave strength of the close contact or higher.<br>
-If the radio wave strength is less than the strength of the close contact, the "ambient" judgment criteria apply. This is in excess of -85dBm by default.<br>
+If the radio wave strength is less than the strength of the close contact, the "ambient" judgment criteria apply. This is in excess of -75dBm by default.<br>
 If it is less than the judgment criteria of "surrounding", it is not counted.
 
 ## Risk level calculation
@@ -197,7 +197,7 @@ Example: UUID=0000b81d-0000-1000-8000-00805f9b34fb, RiskLevel=2<br>
 > 0x03031db805161db80002
 
 Case 2: UUID of the first section is 3 to 4 bytes<br>
-Exapmle: UUID=<ins>1000b81d</ins>-0000-1000-8000-00805f9b34fb, RiskLevel=3<br>
+Example: UUID=<ins>1000b81d</ins>-0000-1000-8000-00805f9b34fb, RiskLevel=3<br>
 > 0x0505<ins>1db80100</ins>0720<ins>1db80100</ins>0003
 
 Format of case 1:<br>
@@ -228,11 +228,11 @@ The following libraries are used in this app.
 - Gson
 - MPAndroid Chart
 
-Compatible with Android OS 8.0 or later.
+Compatible with Android OS 7.0 or later.
 
 ## Sample Application
 Here is a sample applicaiotn apk which built from the source code.<br>
-[SampleApplication](https://github.com/ifLink-AntiCluster/AntiCluster/raw/master/SampleApplication/anticluster_1.0.3.apk)
+[SampleApplication/anticluster_1.0.5.apk](https://github.com/ifLink-AntiCluster/AntiCluster/raw/master/SampleApplication/anticluster_1.0.5.apk)
 
 ## Community
 If you have a request, question, or bug report, please use the issue feature on GitHub.
