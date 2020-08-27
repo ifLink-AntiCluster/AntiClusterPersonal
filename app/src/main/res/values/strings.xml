@@ -49,7 +49,7 @@
 	<string name="default_alert_timer">15</string>
 	<string name="alert_timer">分以上</string>
 	<string name="around_judge_line">●「周囲」の推定基準</string>
-	<string name="default_around_rssi">-85</string>
+	<string name="default_around_rssi">-75</string>
 	<string name="continuous_time">継続時間</string>
 	<string name="setting_10m">ｍ以内</string>
 	<string name="level_alert">p = 濃厚接触 x </string>
