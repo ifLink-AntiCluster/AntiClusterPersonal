@@ -1,13 +1,13 @@
 <resources>
-	<string name="app_name">Anti Cluster</string>
+	<string name="app_name">AntiCluster Personal</string>
 	<string name="navigation_drawer_open">Open navigation drawer</string>
 	<string name="navigation_drawer_close">Close navigation drawer</string>
-	<string name="nav_header_title">ifLink Anti Cluster</string>
+	<string name="nav_header_title">ifLink AntiCluster Personal</string>
 	<string name="nav_header_subtitle">ifLink Open Community</string>
 	<string name="nav_header_desc">Navigation header</string>
 	<string name="action_settings">Settings</string>
 	<!-- メニュー -->
-	<string name="menu_home">Anti Cluster</string>
+	<string name="menu_home">AntiCluster Personal</string>
 	<string name="menu_setting">設定</string>
 	<string name="menu_logging">ログ確認</string>
 	<!-- レベル説明 -->
