@@ -48,7 +48,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:ems="10"
-                        android:inputType="number"
+                        android:inputType="numberSigned"
                         android:text="@string/default_rssi"
                         android:textSize="14sp" />
 
@@ -114,7 +114,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:ems="10"
-                    android:inputType="number"
+                    android:inputType="numberSigned"
                     android:text="@string/default_around_rssi"
                     android:textSize="14sp" />
 
