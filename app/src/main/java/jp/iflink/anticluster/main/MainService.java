@@ -77,9 +77,13 @@ public class MainService extends IntentService {
         if (blescan_task){
             // BLEスキャンタスクを起動
             this.bleScanTask = new BleScanTask();
-            bleScanTask.init(getApplicationContext());
-            bleScanTask.initScan();
-            new Thread(bleScanTask).start();
+            boolean success = bleScanTask.init(getApplicationContext());
+            if (success) {
+                bleScanTask.initScan();
+                new Thread(bleScanTask).start();
+            } else {
+                bleScanTask = null;
+            }
         }
         if (logging_task){
             // ロギングタスクをスレッド起動
