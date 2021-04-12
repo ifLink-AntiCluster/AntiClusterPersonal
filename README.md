@@ -3,15 +3,16 @@
 [English text follows the Japanese text.](#overview-1)
 
 ## Overview
-スマートフォンが発信する電波を利用して近接をカウントするアプリです。
+スマートフォンが発信するビーコン信号を利用して近接した数を計測するアプリです。
 
 ## Description
 スマートフォンがBluetooth機器接続のために発信しているAdvertisingパケットを受信し、<br>
-電波強度と継続時間に応じて「濃厚接触」「至近距離」「周囲」の判定を行い、近接している人の数をカウントします。<br>
+電波強度と継続時間に応じて「濃厚接触」「至近距離」「周囲」の判定を行い、近接している人の数としてカウントします。<br>
 一定距離で一定時間以上、近接している人がいた場合、濃厚接触としてカウントします。<br>
-カウントの現在値は10分毎に集計・クリアされ、リアルタイムにグラフに描画されます。<br>
+カウントの現在値は10分毎に集計・クリアされる値で、この値がリアルタイムにグラフに描画されます。<br>
 表示期間中のカウントの最大値を元に、リスク判定結果が表示されます。<br>
-また、"リスク判定を共有"をタップすると、リスク判定のレベル値をAdvertisingパケットに載せて送信することができます。
+"リスク判定を共有"する機能もあり、手動でリスク判定のレベル値をAdvertisingパケットにて共有可能です。<br>
+（自動で共有する機能はありません）
 
 ## Screenshots
 <img src="screenshot/Screenshot_home_1d.png" width="240" alt="Screenshot"/> <img src="screenshot/Screenshot_home_2w.png" width="240" alt="Screenshot"/> <img src="screenshot/Screenshot_setting.png" width="240" alt="Screenshot"/>
@@ -40,13 +41,13 @@ Advertisingパケットをスキャンするタイミングおよび電波強度
 
 電波強度および継続時間に応じた近接判定の閾値も、設定画面で変更可能です。<br>
 濃厚接触の判定は、初期設定では-65dBm以上で15分以上です。<br>
-濃厚接触の電波強度以上で継続時間に達するまでは、至近距離と判定されます。<br>
-濃厚接触の電波強度未満の場合、「周囲」の判定基準が適用されます。これは初期設定では-75dBm超過です。<br>
-「周囲」の判定基準以下の場合は、カウント対象外となります。
+検出されたデバイスが濃厚接触の電波強度以上で継続時間に達するまでは、至近距離と判定されます。<br>
+検出されたデバイスが濃厚接触の電波強度未満の場合、初期設定では-75dBm超過までは「周囲」と判定されます。<br>
+検出されたデバイスが「周囲」の判定基準以下の場合は、カウント対象外となります。
 
 ## Risk level calculation
 リスク判定の計算は、４時間／１日／２週間のそれぞれの期間で、期間中のカウントの最大値を元に行われます。<br>
-（現在値の左のアイコンをタップすることで、期間中最大値を確認する事が可能です）<br>
+（現在値の左のアイコンをタップすることで、期間中最大値をの表示に切り替わります）<br>
 リスク判定の基準となる判定値を求める計算式は、以下となります。
 ```
 判定値p = (濃厚接触の数 * 係数1) + (至近距離の数 * 係数2) + (周囲の数 * 係数3)
@@ -61,7 +62,7 @@ Level 5 : p >= 閾値4
 ```
 レベルの閾値および計算式の係数は、設定画面で変更することができます。
 
-カウントした値はデータファイルとして外部から参照可能なフォルダに保存しています。
+カウントした値はデータファイルとして外部から参照可能なディレクトリに保存しています。
 
 ## Risk level BLE format
 リスク判定のレベル値を送信する際のAdvertisingパケットのペイロードは以下の通りです。
@@ -130,14 +131,15 @@ ifLinkOpenCommunityは、利用者に対し、本アプリケーションにお�
 
 
 ## Overview
-This is an application that counts the proximity using the radio waves transmitted by the smartphone.
+This is an application that measures the number of proximity using beacon signals transmitted by smartphones.
 
 ## Description
-It receives the Advertising packets that the smartphone is sending out to connect to the Bluetooth device and counts the number of people who are in close proximity by judging "close contact", "close proximity" and "surroundings" according to the radio wave strength and duration.<br>
-If there is a person who is in close proximity for more than a certain amount of time at a certain distance, it is counted as close contact.<br>
-The current value of the count is counted and cleared every 10 minutes, and is drawn on the graph in real time.<br>
-The results of the risk assessment are displayed based on the maximum value of the count during the display period.<br>
-In addition, by tapping "Share risk judgment", the level value of the risk judgment can be put on the Advertising packet and sent.<br>
+It receives the advertising packets that the smartphone is transmitted to connect to the Bluetooth device and counts as the number of people who are in close proximity by judging "close contact", "near" and "around" according to the RSSI and duration.<br>
+If there is a person who is in close proximity for more than a certain amount of time at a certain distance, it is counted as "close contact".<br>
+The "Current" is a value that is counted and cleared every 10 minutes, and it is drawn on the graph in real time.<br>
+The results of the risk level are displayed based on the maximum value of the count during a display period.<br>
+There is also a function to share risk level which allows you to manually share the risk level value by the advertising packet.<br>
+Note that the the risk level never shared automatically.
 
 ## Screenshots
 <img src="screenshot/Screenshot_home_1d.png" width="240" alt="Screenshot"/> <img src="screenshot/Screenshot_home_2w.png" width="240" alt="Screenshot"/> <img src="screenshot/Screenshot_setting.png" width="240" alt="Screenshot"/>
@@ -154,28 +156,28 @@ The Gradle build system is used.
 3. "Run 'app'" to run the app.
 
 ## Usage
-Please turn on Bluetooth and use it.<br>
-While the app is running, it scans and counts the Advertising packets of Bluetooth devices.<br>
-When you exit the app, the count will also stop.<br>
-When you click on the "Share Risk Assessment" button, the Advertising packet will be sent in the specified format.<br>
-You can change the UUID of Advertising packets on the settings screen.<br>
+Please turn on Bluetooth to use it.<br>
+While the app is running, it scans and counts the advertising packets of Bluetooth devices.<br>
+When you close the app, counts process will be stop.<br>
+When you click the "Share the Level" button, the advertising packet will be transmitted in the specified format.<br>
+You can change the UUID of advertising packets by the settings screen.<br>
 
-The timing and signal strength values for scanning Advertising packets are dependent on the Android device.<br>
-The default setting is Low power (scan once every 5 seconds for 0.5 seconds), but this can be changed on the settings screen.<br>
-(In general, the more often you scan, the less battery performance you'll get.)<br>
+The timing of scanning for advertising packets and the RSSI value depends on the Android device.<br>
+The default value is a low power (scan once about every 5 seconds for 0.5 seconds), but this can be changed by the settings screen.<br>
+(In general, the increased frequency of scans leads to a decrease in battery performance.)<br>
 
-Thresholds for proximity determination based on radio wave strength and duration can also be changed on the setting screen.<br>
-By default, the concentration contact is determined to be -65dBm or more for 15 minutes or more.<br>
-It is judged to be a close-range contact until it reaches the duration of the radio wave strength of the close contact or higher.<br>
-If the radio wave strength is less than the strength of the close contact, the "ambient" judgment criteria apply. This is in excess of -75dBm by default.<br>
-If it is less than or equal to the judgment criteria of "surrounding", it is not counted.
+Thresholds for proximity determination based on RSSI value and scanning duration can change by the setting screen.<br>
+The "close contact" is judged when a device RSSI value is -65dBm (by default) or more and continues for 15 minutes (by default) or more.<br>
+A detected device is judged as "near" when its RSSI value is the RSSI of "close contact" or more and until the duration time of "close contact" is reached.<br>
+If a detected device's RSSI value is less than the RSSI of "close contact", it will be judged as "around" until it exceeds -75dBm (by default).<br>
+If a detected device's RSSI value is less than the RSSI of "around", it will not be counted. 
 
 ## Risk level calculation
-The calculation of the risk assessment is based on the maximum value of the count during the period for each of the four-hour, one-day and two-week periods.
-(By tapping the icon to the left of the current value, you can check the maximum value during the period.)
-The formula for calculating the value to be used as the basis for risk assessment is as follows.
+The calculation of the risk level is based on the maximum value of the count during the period for each of the four-hours, one-day and two-weeks periods.
+(switch to the display of the maximum value by tapping the icon to the left of the current value)
+The formula for calculating the value to be used as the basis for risk level is as follows.
 ```
-Judgment value p = (number of close contacts * coefficient 1) + (number of closest contacts * coefficient 2) + (number of surroundings * coefficient 3)
+Judgment value p = (number of "close contact" * factor 1) + (number of "near" * factor 2) + (number of "around" * factor 3)
 ```
 Based on the above judgment value p, the level is judged according to the threshold of level 1 to 5.
 ```
@@ -185,16 +187,16 @@ Level 3 : p < threshold 3
 Level 4 : p < threshold 4
 Level 5 : p >= threshold 4
 ```
-The level thresholds and formula coefficients can be changed on the setting screen.
+The level thresholds and formula factors can be changed by the setting screen.
 
-The counted value is saved as a data file in a folder that can be accessed from outside.
+The counted value is saved as a data file in a directory that can be accessed from outside.
 
 ## Risk level BLE format
 The payload of BLE advertising when send risk level value is as follows.
 
 Case 1: UUID of the first section is 1 to 2 bytes<br>
-Example: UUID=0000b81d-0000-1000-8000-00805f9b34fb, RiskLevel=2<br>
-> 0x03031db805161db80002
+Example: UUID=0000<ins>b81d</ins>-0000-1000-8000-00805f9b34fb, RiskLevel=2<br>
+> 0x0303<ins>1db8</ins>0516<ins>1db8</ins>0002
 
 Case 2: UUID of the first section is 3 to 4 bytes<br>
 Example: UUID=<ins>1000b81d</ins>-0000-1000-8000-00805f9b34fb, RiskLevel=3<br>
